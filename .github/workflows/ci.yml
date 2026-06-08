@@ -46,8 +46,8 @@ jobs:
       - name: Verify no obvious secrets
         run: make verify-no-secrets
 
-  smoke-installer-dry-run:
-    name: Installer dry-run smoke test
+  smoke-installer-dry-run-rc:
+    name: Installer dry-run smoke test for RC
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
@@ -57,5 +57,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run installer dry-run
+      - name: Run RC installer dry-run
         run: make install-dry-run VERSION=v0.1.0-rc.3
+
+  smoke-install-stable:
+    name: Install and smoke test stable bb
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - verify-examples
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install stable bb v0.1.0
+        run: make install-version VERSION=v0.1.0
+
+      - name: Smoke test installed bb
+        run: make smoke
+
+      - name: Run basic script
+        run: make run-basic-script
+
+      - name: Run basic example workflow
+        run: make run-basic-example
+
+      - name: Clean generated example artifacts
+        run: make clean-basic-example
+
+      - name: Verify working tree remains clean
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git status --short
+
+          if [[ -n "$(git status --short)" ]]; then
+            echo "Example workflow left tracked or unignored files behind." >&2
+            exit 1
+          fi
