@@ -1,0 +1,17 @@
+Expected behavior:
+
+bb report should generate or display a JSON report for the latest BrikByteOS run.
+
+Run:
+
+bb init
+bb run
+bb report
+
+Expected successful output includes:
+
+report.json
+
+Generated report should appear under:
+
+.bb/runs/<run-id>/reports/report.json

@@ -1,0 +1,17 @@
+Expected behavior:
+
+bb gate should evaluate the BrikByteOS quality gate for the latest run.
+
+Run:
+
+bb init
+bb run
+bb gate
+
+Expected successful output includes:
+
+Verdict:
+
+Generated gate result should appear under:
+
+.bb/runs/<run-id>/gate-result.json

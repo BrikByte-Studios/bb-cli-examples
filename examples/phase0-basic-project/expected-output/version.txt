@@ -1,0 +1,11 @@
+Expected behavior:
+
+bb version should print BrikByteOS build metadata.
+
+Example:
+
+BrikByteOS bb
+Version: v0.1.0
+Commit: <commit>
+Built: <build-date>
+OS/Arch: <os>/<arch>

@@ -1,0 +1,13 @@
+Expected behavior:
+
+bb doctor should diagnose whether the selected workspace is ready for BrikByteOS Phase 0 commands.
+
+A successful or useful output should include:
+- a BrikByteOS Doctor heading
+- PASS, WARN, or FAIL diagnostics
+- clear guidance when something is missing
+
+Run after initialization:
+
+bb init
+bb doctor

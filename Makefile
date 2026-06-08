@@ -1,8 +1,8 @@
 # Makefile for bb-cli-examples.
 #
 # Purpose:
-#   Provide simple, safe commands for installing `bb`, verifying this examples
-#   repository, and running Phase 0 examples.
+#   Provide safe, beginner-friendly commands for installing `bb`, verifying this
+#   examples repository, and running Phase 0 examples.
 #
 # Repository role:
 #   bb-cli-examples teaches users how to use the BrikByteOS `bb` CLI.
@@ -19,7 +19,8 @@
 # Public installer/release repo:
 #   BrikByte-Studios/bb-cli-releases
 
-SHELL := /usr/bin/env bash
+SHELL := bash
+.SHELLFLAGS := -euo pipefail -c
 
 INSTALLER_URL ?= https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh
 INSTALL_DIR ?= $(HOME)/.local/bin
@@ -30,39 +31,41 @@ BASIC_EXAMPLE_DIR := examples/phase0-basic-project
 
 .PHONY: \
 	help \
-	install install-version install-dry-run uninstall \
-	version doctor \
+	install install-version install-dry-run upgrade downgrade uninstall \
+	verify-bb-installed version doctor smoke \
 	verify verify-examples verify-no-secrets verify-basic-example \
 	run-basic-example run-basic-script \
-	clean upgrade downgrade
+	clean clean-basic-example
 
 help:
 	@echo "bb-cli-examples commands"
 	@echo ""
 	@echo "Install:"
-	@echo "  make install                  Install latest stable bb"
-	@echo "  make install-version VERSION=v0.1.0"
-	@echo "  make install-dry-run          Preview install without writing files"
-	@echo "  make uninstall                Remove bb from INSTALL_DIR"
+	@echo "  make install                         Install latest stable bb"
+	@echo "  make install-version VERSION=v0.1.0  Install a specific bb version"
+	@echo "  make install-dry-run                 Preview install without writing files"
+	@echo "  make upgrade                         Upgrade bb to latest stable"
+	@echo "  make downgrade VERSION=v0.1.0        Install/downgrade to a specific version"
+	@echo "  make uninstall                       Remove bb from INSTALL_DIR"
 	@echo ""
 	@echo "Use bb:"
-	@echo "  make version                  Run bb version"
-	@echo "  make doctor                   Run bb doctor"
+	@echo "  make version                         Run bb version"
+	@echo "  make doctor                          Run bb doctor"
+	@echo "  make smoke                           Run basic bb smoke checks"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make run-basic-example        Run the Phase 0 basic project commands"
-	@echo "  make run-basic-script         Run the demo hello.sh script"
+	@echo "  make run-basic-example               Run the Phase 0 basic project commands"
+	@echo "  make run-basic-script                Run the demo hello.sh script"
 	@echo ""
 	@echo "Verification:"
-	@echo "  make verify                   Verify repository and examples"
-	@echo "  make verify-examples          Verify required example files"
-	@echo "  make verify-no-secrets        Scan for obvious secret-like content"
-	@echo "  make verify-basic-example     Verify Phase 0 basic example files"
-	@echo ""
-	@echo "  make upgrade                  Upgrade bb to latest stable"
-	@echo "  make downgrade VERSION=v0.1.0 Install/downgrade to a specific version"
+	@echo "  make verify                          Verify repository and examples"
+	@echo "  make verify-examples                 Verify required example files"
+	@echo "  make verify-no-secrets               Scan for obvious secret-like content"
+	@echo "  make verify-basic-example            Verify Phase 0 basic example files"
+	@echo "  make verify-bb-installed             Verify installed bb binary exists"
 	@echo ""
 	@echo "Variables:"
+	@echo "  INSTALLER_URL=$(INSTALLER_URL)"
 	@echo "  INSTALL_DIR=$(INSTALL_DIR)"
 	@echo "  BB=$(BB)"
 	@echo "  VERSION=$(VERSION)"
@@ -89,25 +92,56 @@ install-dry-run:
 		curl -sSL "$(INSTALLER_URL)" | bash -s -- --install-dir "$(INSTALL_DIR)" --dry-run; \
 	fi
 
+upgrade:
+	@echo "Upgrading bb to the latest stable version in $(INSTALL_DIR)"
+	@curl -sSL "$(INSTALLER_URL)" | bash -s -- --install-dir "$(INSTALL_DIR)"
+	@$(BB) version
+
+downgrade:
+	@if [[ -z "$(VERSION)" ]]; then \
+		echo "VERSION is required. Example: make downgrade VERSION=v0.1.0"; \
+		exit 1; \
+	fi
+	@echo "Installing/downgrading bb to $(VERSION) in $(INSTALL_DIR)"
+	@curl -sSL "$(INSTALLER_URL)" | bash -s -- --version "$(VERSION)" --install-dir "$(INSTALL_DIR)"
+	@$(BB) version
+
 uninstall:
 	@echo "Removing $(BB)"
 	@rm -f "$(BB)"
 	@echo "Uninstall complete."
 
-version:
+verify-bb-installed:
+	@if [[ ! -x "$(BB)" ]]; then \
+		echo "bb is not installed or is not executable at: $(BB)"; \
+		echo ""; \
+		echo "Run one of:"; \
+		echo "  make install"; \
+		echo "  make install-version VERSION=v0.1.0"; \
+		exit 1; \
+	fi
+	@echo "bb found at $(BB)"
 	@$(BB) version
 
-doctor:
+version: verify-bb-installed
+	@$(BB) version
+
+doctor: verify-bb-installed
 	@$(BB) doctor
 
-run-basic-example: verify-basic-example
+smoke: verify-bb-installed
+	@$(BB) version
+	@$(BB) --help
+	@$(BB) doctor --help
+	@$(BB) config --help
+	@$(BB) run --help
+	@echo "bb smoke checks passed"
+
+run-basic-example: verify-bb-installed verify-basic-example
 	@echo "Running Phase 0 basic project example"
-	@cd "$(BASIC_EXAMPLE_DIR)" && "$(BB)" version
-	@cd "$(BASIC_EXAMPLE_DIR)" && "$(BB)" doctor
-	@cd "$(BASIC_EXAMPLE_DIR)" && "$(BB)" config validate
+	@cd "$(BASIC_EXAMPLE_DIR)" && BB="$(BB)" ./scripts/run-example.sh
 
 run-basic-script: verify-basic-example
-	@cd "$(BASIC_EXAMPLE_DIR)" && chmod +x scripts/hello.sh
 	@cd "$(BASIC_EXAMPLE_DIR)" && ./scripts/hello.sh
 
 verify: verify-examples verify-no-secrets
@@ -120,15 +154,22 @@ verify-basic-example:
 	@test -f "$(BASIC_EXAMPLE_DIR)/README.md"
 	@test -f "$(BASIC_EXAMPLE_DIR)/brikbyteos.yaml"
 	@test -f "$(BASIC_EXAMPLE_DIR)/scripts/hello.sh"
+	@test -f "$(BASIC_EXAMPLE_DIR)/scripts/run-example.sh"
+	@test -f "$(BASIC_EXAMPLE_DIR)/scripts/clean-example.sh"
 	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/version.txt"
 	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/doctor.txt"
 	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/config-validate.txt"
+	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/run.txt"
+	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/report.txt"
+	@test -f "$(BASIC_EXAMPLE_DIR)/expected-output/gate.txt"
 	@bash -n "$(BASIC_EXAMPLE_DIR)/scripts/hello.sh"
+	@bash -n "$(BASIC_EXAMPLE_DIR)/scripts/run-example.sh"
+	@bash -n "$(BASIC_EXAMPLE_DIR)/scripts/clean-example.sh"
 	@echo "basic example verification passed"
 
 verify-no-secrets:
 	@echo "Scanning for obvious secret-like content"
-	@if grep -RInE '(GITHUB_TOKEN|DIST_RELEASE_TOKEN|SECRET=|PASSWORD=|PRIVATE KEY|BEGIN RSA|BEGIN OPENSSH|BEGIN PRIVATE KEY)' . \
+	@if grep -RInE '(GITHUB_TOKEN=|DIST_RELEASE_TOKEN=|SECRET=|PASSWORD=|PRIVATE KEY|BEGIN RSA|BEGIN OPENSSH|BEGIN PRIVATE KEY)' . \
 		--exclude-dir=.git \
 		--exclude=Makefile; then \
 		echo "Possible secret-like content found."; \
@@ -139,18 +180,9 @@ verify-no-secrets:
 clean:
 	@find . -name ".DS_Store" -delete
 	@find . -name "*.tmp" -delete
+	@rm -rf "$(BASIC_EXAMPLE_DIR)/.bb"
+	@rm -f "$(BASIC_EXAMPLE_DIR)/bb.config.yaml"
 	@echo "clean complete"
 
-upgrade:
-	@echo "Upgrading bb to the latest stable version in $(INSTALL_DIR)"
-	@curl -sSL "$(INSTALLER_URL)" | bash -s -- --install-dir "$(INSTALL_DIR)"
-	@$(BB) version
-
-downgrade:
-	@if [[ -z "$(VERSION)" ]]; then \
-		echo "VERSION is required. Example: make downgrade VERSION=v0.1.0"; \
-		exit 1; \
-	fi
-	@echo "Downgrading/installing bb $(VERSION) into $(INSTALL_DIR)"
-	@curl -sSL "$(INSTALLER_URL)" | bash -s -- --version "$(VERSION)" --install-dir "$(INSTALL_DIR)"
-	@$(BB) version
+clean-basic-example:
+	@cd "$(BASIC_EXAMPLE_DIR)" && ./scripts/clean-example.sh

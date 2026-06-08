@@ -1,0 +1,18 @@
+Expected behavior:
+
+bb run should execute the built-in Phase 0 dummy adapter and create run artifacts.
+
+Run:
+
+bb init
+bb run
+
+Expected successful output includes:
+
+BrikByteOS Run Completed
+Run ID:
+Adapter: dummy
+
+Generated artifacts should appear under:
+
+.bb/runs/<run-id>/

@@ -1,0 +1,12 @@
+Expected behavior:
+
+bb config validate should read the generated bb.config.yaml file and report whether it is valid.
+
+Run:
+
+bb init
+bb config validate
+
+Expected successful output includes:
+
+BrikByteOS config is valid.

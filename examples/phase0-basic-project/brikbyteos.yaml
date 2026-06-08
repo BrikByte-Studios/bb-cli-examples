@@ -1,0 +1,40 @@
+# Minimal public example configuration for BrikByteOS Phase 0.
+#
+# This file is intentionally human-readable. The current Phase 0 CLI generates
+# and validates `bb.config.yaml` through `bb init`; this file exists as a public
+# teaching artifact for examples and docs.
+#
+# Safety:
+#   - no secrets
+#   - no credentials
+#   - no private paths
+#   - no production data
+
+project:
+  name: phase0-basic-project
+  description: Minimal public example project for the BrikByteOS bb CLI.
+  type: example
+  version: v0.1.0
+
+phase:
+  name: phase0
+  maturity: learning
+
+quality:
+  gates:
+    - name: config-validation
+      description: Validate that the generated BrikByteOS config is readable and structurally valid.
+      required: true
+
+    - name: doctor-check
+      description: Run local Phase 0 runtime readiness diagnostics.
+      required: true
+
+    - name: dummy-adapter-run
+      description: Run the built-in Phase 0 dummy adapter.
+      required: true
+
+scripts:
+  hello: scripts/hello.sh
+  run_example: scripts/run-example.sh
+  clean_example: scripts/clean-example.sh
