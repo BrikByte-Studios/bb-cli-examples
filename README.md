@@ -1,2 +1,460 @@
-# bb-cli-examples
-A public examples repository showing users how to use BrikByteOS bb in real projects.
+# BrikByteOS bb CLI Examples
+
+This repository contains public examples, tutorials, and starter workflows for the BrikByteOS `bb` CLI.
+
+It is designed to help users learn how to use `bb` in real projects.
+
+---
+
+## Repository Purpose
+
+`bb-cli-examples` is the public learning and adoption repository for BrikByteOS `bb`.
+
+It provides:
+
+* example projects
+* beginner-friendly tutorials
+* safe demo workflows
+* expected output references
+* installation and smoke-test commands
+* public usage patterns for Phase 0
+
+This repository teaches usage.
+
+It does not build or release the `bb` CLI.
+
+---
+
+## Repository Roles
+
+```text
+bb-cli = private source/build repository
+bb-cli-releases = public installer and release distribution repository
+bb-cli-examples = public examples and tutorials repository
+```
+
+Core rule:
+
+```text
+bb-cli builds the tool.
+bb-cli-releases distributes the tool.
+bb-cli-examples teaches the tool.
+```
+
+---
+
+## Install `bb`
+
+Linux/macOS:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh | bash
+```
+
+Install a specific version:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh | bash -s -- --version v0.1.0
+```
+
+Install a release candidate explicitly:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh | bash -s -- --version v0.1.0-rc.3
+```
+
+Windows PowerShell:
+
+```powershell
+iwr https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.ps1 -useb | iex
+```
+
+Verify installation:
+
+```bash
+bb version
+```
+
+If your shell finds another `bb` first, run:
+
+```bash
+$HOME/.local/bin/bb version
+```
+
+---
+
+## Quick Start
+
+Clone this repository:
+
+```bash
+git clone https://github.com/BrikByte-Studios/bb-cli-examples.git
+cd bb-cli-examples
+```
+
+Install a known version:
+
+```bash
+make install-version VERSION=v0.1.0-rc.3
+```
+
+Run smoke checks:
+
+```bash
+make smoke
+```
+
+Run the basic example:
+
+```bash
+make run-basic-example
+```
+
+Clean generated example artifacts:
+
+```bash
+make clean-basic-example
+```
+
+---
+
+## Available Examples
+
+| Example                         | Purpose                                     |
+| ------------------------------- | ------------------------------------------- |
+| `examples/phase0-basic-project` | Minimal BrikByteOS Phase 0 project workflow |
+
+More examples will be added as the CLI matures.
+
+---
+
+## Phase 0 Basic Project
+
+The first example teaches this workflow:
+
+```text
+bb version
+bb init
+bb doctor
+bb config validate
+bb run
+bb report
+bb gate
+```
+
+Run it with:
+
+```bash
+make run-basic-example
+```
+
+Or manually:
+
+```bash
+cd examples/phase0-basic-project
+bb init
+bb doctor
+bb config validate
+bb run
+bb report
+bb gate
+```
+
+---
+
+## Makefile Commands
+
+### Install
+
+```bash
+make install
+```
+
+Installs the latest stable public release.
+
+```bash
+make install-version VERSION=v0.1.0
+```
+
+Installs a specific version.
+
+```bash
+make install-version VERSION=v0.1.0-rc.3
+```
+
+Installs a release candidate explicitly.
+
+```bash
+make install-dry-run
+```
+
+Previews installation without writing files.
+
+```bash
+make upgrade
+```
+
+Upgrades to the latest stable release.
+
+```bash
+make downgrade VERSION=v0.1.0
+```
+
+Installs or downgrades to a specific version.
+
+```bash
+make uninstall
+```
+
+Removes the installed `bb` binary from `INSTALL_DIR`.
+
+---
+
+### Use `bb`
+
+```bash
+make version
+```
+
+Runs:
+
+```bash
+$HOME/.local/bin/bb version
+```
+
+```bash
+make doctor
+```
+
+Runs:
+
+```bash
+$HOME/.local/bin/bb doctor
+```
+
+```bash
+make smoke
+```
+
+Runs basic smoke checks:
+
+```text
+bb version
+bb --help
+bb doctor --help
+bb config --help
+bb run --help
+```
+
+---
+
+### Examples
+
+```bash
+make run-basic-example
+```
+
+Runs the Phase 0 basic project.
+
+```bash
+make run-basic-script
+```
+
+Runs the harmless demo script.
+
+```bash
+make clean-basic-example
+```
+
+Removes generated files from the basic example.
+
+---
+
+### Verification
+
+```bash
+make verify
+```
+
+Verifies repository structure and checks for obvious secret-like content.
+
+```bash
+make verify-basic-example
+```
+
+Checks the Phase 0 basic example files.
+
+```bash
+make verify-no-secrets
+```
+
+Scans for obvious secret-like content.
+
+---
+
+## Recommended Local PATH Setup
+
+The public installer installs `bb` to:
+
+```text
+$HOME/.local/bin
+```
+
+Make sure this appears before stale development binaries such as:
+
+```text
+$HOME/go/bin
+```
+
+Recommended shell setup:
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+```
+
+Reload your shell:
+
+```bash
+source ~/.zshrc
+hash -r
+rehash 2>/dev/null || true
+```
+
+Check which `bb` will run:
+
+```bash
+type -a bb
+which bb
+bb version
+```
+
+---
+
+## Generated Files
+
+Running examples may create:
+
+```text
+.bb/
+bb.config.yaml
+```
+
+These files are generated by `bb` commands and are intentionally ignored by Git.
+
+To clean the basic example:
+
+```bash
+make clean-basic-example
+```
+
+---
+
+## Security
+
+This repository must not contain:
+
+* secrets
+* tokens
+* private keys
+* production credentials
+* private customer data
+* release signing keys
+* generated release artifacts
+
+This repository should not contain:
+
+```text
+cmd/
+internal/
+go.mod
+go.sum
+.goreleaser.yaml
+dist/
+```
+
+Those belong in the source/build repository, not the examples repository.
+
+---
+
+## What This Repository Is Not
+
+This repository is not:
+
+* the `bb` source repository
+* the release artifact repository
+* the release automation repository
+* a private integration test suite
+* a place for production secrets
+* a second build system for `bb`
+
+---
+
+## Troubleshooting
+
+### `bb: command not found`
+
+Install `bb`:
+
+```bash
+make install
+```
+
+Or install a specific version:
+
+```bash
+make install-version VERSION=v0.1.0-rc.3
+```
+
+---
+
+### Wrong `bb` Version Is Running
+
+Check:
+
+```bash
+type -a bb
+which -a bb
+```
+
+Use the installed binary directly:
+
+```bash
+$HOME/.local/bin/bb version
+```
+
+Or update your `PATH`:
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"
+```
+
+---
+
+### Example Generated Files Show in Git
+
+Clean the example:
+
+```bash
+make clean-basic-example
+```
+
+Check Git status:
+
+```bash
+git status --short
+```
+
+Make sure root `.gitignore` includes:
+
+```gitignore
+.bb/
+bb.config.yaml
+examples/**/.bb/
+examples/**/bb.config.yaml
+```
+
+---
+
+## License
+
+This repository is licensed under the MIT License.

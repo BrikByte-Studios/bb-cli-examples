@@ -1,0 +1,61 @@
+name: bb-cli-examples CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bb-cli-examples-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-examples:
+    name: Verify examples repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify shell scripts are executable or valid
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bash -n examples/phase0-basic-project/scripts/hello.sh
+          bash -n examples/phase0-basic-project/scripts/run-example.sh
+          bash -n examples/phase0-basic-project/scripts/clean-example.sh
+
+      - name: Verify example repository structure
+        run: make verify
+
+      - name: Verify basic example
+        run: make verify-basic-example
+
+      - name: Verify no obvious secrets
+        run: make verify-no-secrets
+
+  smoke-installer-dry-run:
+    name: Installer dry-run smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - verify-examples
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run installer dry-run
+        run: make install-dry-run VERSION=v0.1.0-rc.3
