@@ -1,0 +1,43 @@
+{
+  "info": {
+    "name": "Phase 1 API Smoke Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET echo should return 200",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/get?project=brikbyteos",
+          "host": ["{{baseUrl}}"],
+          "path": ["get"],
+          "query": [
+            {
+              "key": "project",
+              "value": "brikbyteos"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('project query exists', function () {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.args.project).to.eql('brikbyteos');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

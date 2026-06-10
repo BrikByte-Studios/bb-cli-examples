@@ -1,0 +1,11 @@
+{
+  "id": "phase1-local-env",
+  "name": "Phase 1 Local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://postman-echo.com",
+      "enabled": true
+    }
+  ]
+}

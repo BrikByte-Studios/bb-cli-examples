@@ -1,0 +1,21 @@
+{
+  "name": "phase1-full-evidence-project",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "vite --host 127.0.0.1 --port 4173",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "playwright test --config=playwright.config.js",
+    "test:api": "newman run postman/collection.json --environment postman/environment.json --reporters json --reporter-json-export .bb/tmp/api.json",
+    "test:performance": "k6 run tests/performance/load.js --summary-export .bb/tmp/performance.json",
+    "test:security": "trivy fs . --format json --output .bb/tmp/security.json",
+    "bb:run": "bb run unit ui api perf sec"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "vite": "^5.3.0",
+    "vitest": "^1.6.0",
+    "newman": "^6.2.1"
+  }
+}
