@@ -37,6 +37,13 @@ jobs:
           bash -n examples/phase0-basic-project/scripts/run-example.sh
           bash -n examples/phase0-basic-project/scripts/clean-example.sh
 
+          if [[ -d examples/phase1-evidence-project/scripts ]]; then
+            find examples/phase1-evidence-project/scripts -type f -name "*.sh" -print0 |
+              while IFS= read -r -d '' script; do
+                bash -n "$script"
+              done
+          fi
+
       - name: Verify example repository structure
         run: make verify
 
@@ -60,8 +67,8 @@ jobs:
       - name: Run RC installer dry-run
         run: make install-dry-run VERSION=v0.1.0-rc.3
 
-  smoke-install-stable:
-    name: Install and smoke test stable bb
+  smoke-install-stable-v010:
+    name: Install and smoke test stable bb v0.1.0
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
@@ -95,5 +102,114 @@ jobs:
 
           if [[ -n "$(git status --short)" ]]; then
             echo "Example workflow left tracked or unignored files behind." >&2
+            exit 1
+          fi
+
+  smoke-install-stable-v015-phase1:
+    name: Install bb v0.1.5 and test Phase 1 example
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - verify-examples
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install k6
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo gpg -k || true
+          curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" |
+            sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Install Trivy
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key |
+            gpg --dearmor |
+            sudo tee /usr/share/keyrings/trivy.gpg >/dev/null
+
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" |
+            sudo tee /etc/apt/sources.list.d/trivy.list
+
+          sudo apt-get update
+          sudo apt-get install -y trivy
+
+      - name: Warm Trivy vulnerability database
+        shell: bash
+        run: |
+          set -euo pipefail
+          trivy fs . --download-db-only
+
+      - name: Install stable bb v0.1.5
+        run: make install-version VERSION=v0.1.5
+
+      - name: Smoke test installed bb
+        run: make smoke
+
+      - name: Install Phase 1 dependencies
+        working-directory: examples/phase1-evidence-project
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: examples/phase1-evidence-project
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify Phase 1 doctor
+        working-directory: examples/phase1-evidence-project
+        run: bb doctor
+
+      - name: Run Phase 1 evidence workflow
+        working-directory: examples/phase1-evidence-project
+        run: bb run --all --debug
+
+      - name: Evaluate Phase 1 gate
+        working-directory: examples/phase1-evidence-project
+        run: bb gate evaluate
+
+      - name: Generate Phase 1 reports
+        working-directory: examples/phase1-evidence-project
+        run: bb report generate
+
+      - name: Clean generated Phase 1 artifacts
+        run: |
+          set -euo pipefail
+
+          rm -rf examples/phase1-evidence-project/.bb
+          rm -rf examples/phase1-evidence-project/test-results
+          rm -rf examples/phase1-evidence-project/playwright-report
+          rm -rf examples/phase1-evidence-project/.playwright
+          rm -rf examples/phase1-evidence-project/node_modules
+
+      - name: Verify working tree remains clean
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git status --short
+
+          if [[ -n "$(git status --short)" ]]; then
+            echo "Phase 1 workflow left tracked or unignored files behind." >&2
             exit 1
           fi
