@@ -1,0 +1,49 @@
+# GitLab CI example for BrikByteOS bb.
+#
+# Purpose:
+#   Demonstrates how to install bb, collect release evidence, evaluate gates,
+#   generate reports, and preserve .bb/runs as pipeline artifacts.
+#
+# Notes:
+#   - APPROVED exits 0.
+#   - REJECTED, WARNING, and MANUAL_REVIEW_REQUIRED exit non-zero.
+#   - .bb/runs must be uploaded as an artifact, not committed.
+
+stages:
+  - verify
+
+variables:
+  BB_VERSION: "v0.1.5"
+  BB_WORKDIR: "examples/phase1-evidence-project"
+  PNPM_HOME: "$CI_PROJECT_DIR/.pnpm"
+  PATH: "$PNPM_HOME:$PATH"
+
+bb_phase1_verify:
+  stage: verify
+  image: node:22-bookworm
+  timeout: 20m
+
+  before_script:
+    - set -euo pipefail
+    - corepack enable
+    - corepack prepare pnpm@10 --activate
+    - apt-get update
+    - apt-get install -y curl ca-certificates gnupg
+    - curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh | bash -s -- --version "$BB_VERSION"
+    - export PATH="$HOME/.local/bin:$PATH"
+    - bb version
+    - cd "$BB_WORKDIR"
+    - pnpm install --frozen-lockfile
+    - mkdir -p .bb/runs .bb/tmp test-results
+
+  script:
+    - bb doctor
+    - bb run --all --debug
+    - bb gate evaluate
+    - bb report generate
+
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - examples/phase1-evidence-project/.bb/runs/

@@ -1,0 +1,95 @@
+/*
+ * Jenkins Pipeline example for BrikByteOS bb.
+ *
+ * Purpose:
+ *   Demonstrates how to install bb, run Phase 1 evidence collection,
+ *   evaluate release gates, generate reports, and archive .bb/runs.
+ *
+ * Gate behavior:
+ *   APPROVED exits 0.
+ *   REJECTED, WARNING, and MANUAL_REVIEW_REQUIRED exit non-zero.
+ */
+
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+        timestamps()
+    }
+
+    environment {
+        BB_VERSION = 'v0.1.5'
+        BB_WORKDIR = 'examples/phase1-evidence-project'
+        PATH = "${env.HOME}/.local/bin:${env.PATH}"
+    }
+
+    stages {
+        stage('Install bb') {
+            steps {
+                sh '''
+                    set -euo pipefail
+
+                    curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh \
+                      | bash -s -- --version "$BB_VERSION"
+
+                    bb version
+                '''
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                dir("${BB_WORKDIR}") {
+                    sh '''
+                        set -euo pipefail
+
+                        corepack enable || true
+                        corepack prepare pnpm@10 --activate || true
+                        pnpm install --frozen-lockfile
+
+                        mkdir -p .bb/runs .bb/tmp test-results
+                    '''
+                }
+            }
+        }
+
+        stage('Doctor') {
+            steps {
+                dir("${BB_WORKDIR}") {
+                    sh 'bb doctor'
+                }
+            }
+        }
+
+        stage('Run Evidence') {
+            steps {
+                dir("${BB_WORKDIR}") {
+                    sh 'bb run --all --debug'
+                }
+            }
+        }
+
+        stage('Evaluate Gate') {
+            steps {
+                dir("${BB_WORKDIR}") {
+                    sh 'bb gate evaluate'
+                }
+            }
+        }
+
+        stage('Generate Reports') {
+            steps {
+                dir("${BB_WORKDIR}") {
+                    sh 'bb report generate'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'examples/phase1-evidence-project/.bb/runs/**', allowEmptyArchive: true
+        }
+    }
+}

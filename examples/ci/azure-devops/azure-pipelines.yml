@@ -1,0 +1,90 @@
+# Azure DevOps Pipeline example for BrikByteOS bb.
+#
+# Purpose:
+#   Demonstrates how to install bb, run Phase 1 evidence collection,
+#   evaluate gates, generate reports, and publish .bb/runs artifacts.
+#
+# Gate behavior:
+#   APPROVED exits 0.
+#   REJECTED, WARNING, and MANUAL_REVIEW_REQUIRED exit non-zero.
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  BB_VERSION: v0.1.5
+  BB_WORKDIR: examples/phase1-evidence-project
+
+steps:
+  - checkout: self
+
+  - task: NodeTool@0
+    displayName: Install Node.js
+    inputs:
+      versionSpec: "22.x"
+
+  - script: |
+      set -euo pipefail
+
+      curl -sSL https://raw.githubusercontent.com/BrikByte-Studios/bb-cli-releases/main/install.sh \
+        | bash -s -- --version "$(BB_VERSION)"
+
+      echo "$HOME/.local/bin" >> "$GITHUB_PATH" || true
+      export PATH="$HOME/.local/bin:$PATH"
+
+      bb version
+    displayName: Install bb
+
+  - script: |
+      set -euo pipefail
+
+      corepack enable
+      corepack prepare pnpm@10 --activate
+      pnpm install --frozen-lockfile
+
+      mkdir -p .bb/runs .bb/tmp test-results
+    workingDirectory: $(BB_WORKDIR)
+    displayName: Install Phase 1 dependencies
+
+  - script: |
+      set -euo pipefail
+      export PATH="$HOME/.local/bin:$PATH"
+      bb doctor
+    workingDirectory: $(BB_WORKDIR)
+    displayName: Run bb doctor
+
+  - script: |
+      set -euo pipefail
+      export PATH="$HOME/.local/bin:$PATH"
+      bb run --all --debug
+    workingDirectory: $(BB_WORKDIR)
+    displayName: Run bb evidence collection
+
+  - script: |
+      set -euo pipefail
+      export PATH="$HOME/.local/bin:$PATH"
+      bb gate evaluate
+    workingDirectory: $(BB_WORKDIR)
+    displayName: Evaluate bb gate
+
+  - script: |
+      set -euo pipefail
+      export PATH="$HOME/.local/bin:$PATH"
+      bb report generate
+    workingDirectory: $(BB_WORKDIR)
+    displayName: Generate bb reports
+
+  - publish: $(BB_WORKDIR)/.bb/runs
+    artifact: brikbyteos-runs
+    condition: always()
+    displayName: Publish bb run artifacts
