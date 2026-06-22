@@ -177,21 +177,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Verify Phase 1 doctor
-        working-directory: examples/phase1-evidence-project
-        run: bb doctor
+        run: bb --workdir examples/phase1-evidence-project doctor
 
       - name: Run Phase 1 evidence workflow
-        working-directory: examples/phase1-evidence-project
-        run: bb run --all --debug
-
+        run: bb --workdir examples/phase1-evidence-project run --all --debug
       - name: Evaluate Phase 1 gate
-        working-directory: examples/phase1-evidence-project
-        run: bb gate evaluate
-
+        run: bb --workdir examples/phase1-evidence-project gate evaluate
       - name: Generate Phase 1 reports
-        working-directory: examples/phase1-evidence-project
-        run: bb report generate
-
+        run: bb --workdir examples/phase1-evidence-project report generate
       - name: Clean generated Phase 1 artifacts
         run: |
           set -euo pipefail
