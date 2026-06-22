@@ -176,6 +176,9 @@ jobs:
         working-directory: examples/phase1-evidence-project
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Initialize Phase 1 runtime folders
+        run: bb --workdir examples/phase1-evidence-project init --force
+
       - name: Verify Phase 1 doctor
         run: bb --workdir examples/phase1-evidence-project doctor
 
