@@ -80,7 +80,7 @@ __pycache__/
 .bb/
 bb.config.yaml
 examples/**/.bb/
-!examples/**/bb.config.yaml
+examples/**/bb.config.yaml
 
 # Local binaries / downloaded release assets
 bb

@@ -1,0 +1,56 @@
+project:
+  name: sample-app
+  environment: local
+  criticality: medium
+
+release:
+  version: v0.1.0
+  environment: local
+  service: sample-app
+  owner: platform-team
+  releaseType: standard
+
+policy:
+  name: default-policy
+  version: 1.0.0
+
+adapters:
+  unit:
+    tool: vitest
+    command: pnpm exec vitest run tests/unit --reporter=json --outputFile=.bb/tmp/unit.json
+    outputFile: .bb/tmp/unit.json
+
+  ui:
+    tool: playwright
+    command: pnpm exec playwright test --config=playwright.config.js
+    outputFile: test-results/results.json
+
+  api:
+    tool: newman
+    command: pnpm exec newman run postman/collection.json --environment postman/environment.json --reporters json --reporter-json-export .bb/tmp/api.json
+    outputFile: .bb/tmp/api.json
+
+  performance:
+    tool: k6
+    command: k6 run tests/performance/load.js --summary-export .bb/tmp/performance.json
+    outputFile: .bb/tmp/performance.json
+
+  security:
+    tool: trivy
+    command: trivy fs . --format json --output .bb/tmp/security.json
+    outputFile: .bb/tmp/security.json
+
+qualityGates:
+  unit:
+    minPassRate: 95
+
+  ui:
+    maxFailedCriticalJourneys: 0
+
+  performance:
+    maxP95ResponseTimeMs: 500
+    maxErrorRatePercent: 1
+
+  security:
+    maxCritical: 0
+    maxHigh: 3
