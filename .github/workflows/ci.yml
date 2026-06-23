@@ -184,13 +184,19 @@ jobs:
 
       - name: Run Phase 1 evidence workflow
         run: bb --workdir examples/phase1-evidence-project run --all --debug
+
       - name: Evaluate Phase 1 gate
         run: bb --workdir examples/phase1-evidence-project gate evaluate
+
       - name: Generate Phase 1 reports
         run: bb --workdir examples/phase1-evidence-project report generate
+
       - name: Clean generated Phase 1 artifacts
+        shell: bash
         run: |
           set -euo pipefail
+
+          git checkout -- examples/phase1-evidence-project/bb.config.yaml
 
           rm -rf examples/phase1-evidence-project/.bb
           rm -rf examples/phase1-evidence-project/test-results
